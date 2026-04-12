@@ -31,6 +31,21 @@ def open_url(url):
     else:
         os.system(f"xdg-open '{url}'")
 
+# --- HÀM INPUT AN TOÀN (CHỐNG SKIP TRÊN TERMUX) ---
+def safe_input(prompt):
+    """Input an toàn - bắt buộc phải nhập ít nhất 1 ký tự, bỏ qua Enter rỗng"""
+    while True:
+        val = input(prompt).strip()
+        if val:
+            return val
+
+# --- XÓA BUFFER STDIN THỪA ---
+try:
+    import termios
+    termios.tcflush(sys.stdin, termios.TCIFLUSH)
+except:
+    pass
+
 # --- PHẦN CHÈN THÊM: CẤU HÌNH TELEGRAM & CHECKER ---
 clear_screen()
 print("\033[1;33m━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━")
@@ -52,24 +67,24 @@ if os.path.exists(config_file):
             print("\033[1;32m[✓] Đã nạp cấu hình từ file config.json thành công!\033[0m")
             print("    1. Dùng cấu hình cũ")
             print("    2. Nhập cấu hình mới")
-            choice = input("\033[1;36m[?] Chọn (1/2): \033[0m")
+            choice = safe_input("\033[1;36m[?] Chọn (1/2): \033[0m")
             if choice == '1':
                 load_success = True
     except:
         pass
 
 if not load_success:
-    TELE_TOKEN = input("\033[1;36m[+] Nhập Token Bot Telegram: \033[0m")
+    TELE_TOKEN = safe_input("\033[1;36m[+] Nhập Token Bot Telegram: \033[0m")
     print("\033[1;36m[+] Chọn nơi nhận thông báo:\033[0m")
     print("    1. Gửi về Nhóm (Group ID)")
     print("    2. Gửi về Cá nhân (Admin ID)")
-    tele_choice = input("\033[1;36m[?] Nhập lựa chọn (1/2): \033[0m")
+    tele_choice = safe_input("\033[1;36m[?] Nhập lựa chọn (1/2): \033[0m")
     if tele_choice == '1':
-        CHAT_ID = input("\033[1;36m[+] Nhập ID Nhóm (ví dụ có dấu trừ: -100xxxxx): \033[0m")
+        CHAT_ID = safe_input("\033[1;36m[+] Nhập ID Nhóm (ví dụ có dấu trừ: -100xxxxx): \033[0m")
     else:
-        CHAT_ID = input("\033[1;36m[+] Nhập ID Cá nhân: \033[0m")
-    FB_COOKIE = input("\033[1;36m[+] Nhập Cookie Facebook (để check live): \033[0m")
-    FB_TOKEN = input("\033[1;36m[+] Nhập Token Facebook (EAAG...): \033[0m")
+        CHAT_ID = safe_input("\033[1;36m[+] Nhập ID Cá nhân: \033[0m")
+    FB_COOKIE = safe_input("\033[1;36m[+] Nhập Cookie Facebook (để check live): \033[0m")
+    FB_TOKEN = safe_input("\033[1;36m[+] Nhập Token Facebook (EAAG...): \033[0m")
 
     with open(config_file, 'w', encoding='utf-8') as f:
         json.dump({
@@ -80,19 +95,19 @@ if not load_success:
         }, f, indent=4)
     print("\033[1;32m[✓] Đã lưu thông tin vào config.json!\033[0m")
 
-print("\033[1;36m[+] Cấu hình Vượt Tường lửa (Cloudflare Warp Proxy):\033[0m")
-print("    1. Bật Cloudflare Warp 1.1.1.1 (SOCKS5 40000)")
-print("    2. Không dùng proxy (Kết nối trực tiếp)")
-warp_choice = input("\033[1;36m[?] Nhập lựa chọn (1/2): \033[0m")
+print("\033[1;36m[+] Cấu hình Cloudflare Warp 1.1.1.1:\033[0m")
+print("    1. Bật WARP (SOCKS5 40000)")
+print("    2. Không dùng proxy")
+warp_choice = safe_input("\033[1;36m[?] Nhập lựa chọn (1/2): \033[0m")
 PROXIES = {
     'http':  'socks5h://127.0.0.1:40000',
     'https': 'socks5h://127.0.0.1:40000'
 } if warp_choice == '1' else None
 
 if warp_choice == '1':
-    print("\033[1;32m[+] Đã kích hoạt tuyến đường hầm WARP 1.1.1.1!\033[0m")
-elif warp_choice == '2':
-    print("\033[1;33m[+] Chạy trực tiếp không dùng proxy!\033[0m")
+    print("\033[1;32m[+] Đã kích hoạt WARP 1.1.1.1!\033[0m")
+else:
+    print("\033[1;33m[+] Chạy trực tiếp không proxy!\033[0m")
 
 print("\033[1;33m━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\033[0m")
 
