@@ -48,11 +48,6 @@ if os.path.exists(config_file):
             CHAT_ID = config.get('CHAT_ID', '')
             FB_COOKIE = config.get('FB_COOKIE', '')
             FB_TOKEN = config.get('FB_TOKEN', '')
-            warp_choice = config.get('warp_choice', '2')
-            PROXIES = {
-                'http':  'socks5h://127.0.0.1:40000',
-                'https': 'socks5h://127.0.0.1:40000'
-            } if warp_choice == '1' else None
             
             print("\033[1;32m[✓] Đã nạp cấu hình từ file config.json thành công!\033[0m")
             print("    1. Dùng cấu hình cũ")
@@ -76,24 +71,23 @@ if not load_success:
     FB_COOKIE = input("\033[1;36m[+] Nhập Cookie Facebook (để check live): \033[0m")
     FB_TOKEN = input("\033[1;36m[+] Nhập Token Facebook (EAAG...): \033[0m")
 
-    print("\033[1;36m[+] Cấu hình Vượt Tường lửa (Cloudflare Warp Proxy):\033[0m")
-    print("    1. Bật Cloudflare Warp 1.1.1.1 (SOCKS5 40000)")
-    print("    2. Không dùng proxy (Kết nối trực tiếp)")
-    warp_choice = input("\033[1;36m[?] Nhập lựa chọn (1/2): \033[0m")
-    PROXIES = {
-        'http':  'socks5h://127.0.0.1:40000',
-        'https': 'socks5h://127.0.0.1:40000'
-    } if warp_choice == '1' else None
-
     with open(config_file, 'w', encoding='utf-8') as f:
         json.dump({
             'TELE_TOKEN': TELE_TOKEN,
             'CHAT_ID': CHAT_ID,
             'FB_COOKIE': FB_COOKIE,
-            'FB_TOKEN': FB_TOKEN,
-            'warp_choice': warp_choice
+            'FB_TOKEN': FB_TOKEN
         }, f, indent=4)
     print("\033[1;32m[✓] Đã lưu thông tin vào config.json!\033[0m")
+
+print("\033[1;36m[+] Cấu hình Vượt Tường lửa (Cloudflare Warp Proxy):\033[0m")
+print("    1. Bật Cloudflare Warp 1.1.1.1 (SOCKS5 40000)")
+print("    2. Không dùng proxy (Kết nối trực tiếp)")
+warp_choice = input("\033[1;36m[?] Nhập lựa chọn (1/2): \033[0m")
+PROXIES = {
+    'http':  'socks5h://127.0.0.1:40000',
+    'https': 'socks5h://127.0.0.1:40000'
+} if warp_choice == '1' else None
 
 if warp_choice == '1':
     print("\033[1;32m[+] Đã kích hoạt tuyến đường hầm WARP 1.1.1.1!\033[0m")
