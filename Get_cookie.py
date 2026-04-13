@@ -147,15 +147,35 @@ def start_scan_file():
     main()
 
 def main():
-    load_config()
-    banner()
-    print(f"{C}[1]{W} SCAN UID FROM FILE & GET COOKIE")
-    print(f"{C}[2]{W} EXIT")
-    choice = input(f"{Y}[?] Select: {W}")
-    if choice == '1':
-        start_scan_file()
-    else:
-        sys.exit()
+    try:
+        load_config()
+        banner()
+        print(f"{C}[1]{W} SCAN FROM FILE OK-LIST & GET COOKIE")
+        print(f"{C}[2]{W} MANUAL INPUT UID|PASS & GET COOKIE")
+        print(f"{C}[3]{W} EXIT")
+        choice = input("Select Option (1/2/3): ").strip()
+        
+        if choice == '1':
+            start_scan_file()
+        elif choice == '2':
+            try:
+                print("=== FB API FULL DATA ANALYZER ===")
+                u = input("Nhap UID: ").strip()
+                p = input("Nhap Pass: ").strip()
+                if u and p:
+                    get_cookie_logic(u, p)
+                else:
+                    print("[!] Vui long khong de trong!")
+                input("\nNhan Enter de thoat...")
+            except Exception as e:
+                print(f"\n[!] Da xay ra loi: {e}")
+                input("Nhan Enter de tiep tuc...")
+            main()
+        else:
+            sys.exit()
+    except Exception as e:
+        print(f"\n[!] Looi: {e}")
+        input("Nhan Enter de thoat...")
 
 if __name__ == "__main__":
     main()

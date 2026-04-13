@@ -59,8 +59,15 @@ def test_full_login(uid, pw):
         print(f"[×] Error: {e}")
 
 if __name__ == "__main__":
-    print("=== FB API FULL DATA ANALYZER ===")
-    u = input("Nhap UID: ").strip()
-    p = input("Nhap Pass: ").strip()
-    if u and p:
-        test_full_login(u, p)
+    try:
+        print("=== FB API FULL DATA ANALYZER ===")
+        u = input("[?] Nhap UID: ").strip()
+        p = input("[?] Nhap Pass: ").strip()
+        if u and p:
+            test_full_login(u, p)
+        else:
+            print("[!] Vui long khong de trong!")
+        input("\n[XONG] Nhan Enter de thoat...")
+    except Exception as e:
+        print(f"\n[!] Da xay ra loi: {e}")
+        input("Nhan Enter de tiep tuc...")
