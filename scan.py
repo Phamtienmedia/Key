@@ -150,7 +150,7 @@ def verify_license():
             print(G + " ╚═══════════════════════════════════════════════════════╝")
             
             print(G + "\n [>] Status: VALID LICENSE" + N)
-            input(G + " [>] Press Enter to access PTMEDIA TOOL..." + Y)
+            safe_input(G + " [>] Press Enter to access PTMEDIA TOOL..." + Y, allow_empty=True)
         else:
             print(RR + f" [!] SERVER DENIED: {res.get('message', 'Invalid License Key!')}" + N)
             # If saved key failed, clear it
@@ -185,11 +185,24 @@ def open_url(url):
     else:
         os.system(f"xdg-open '{url}'")
 
-def safe_input(prompt):
+def safe_input(prompt, allow_empty=False):
     while True:
-        val = input(prompt).strip()
-        if val:
-            return val
+        try:
+            val = input(prompt).strip()
+            # Clean ANSI escape noise (like ^[) and non-printable chars
+            val = re.sub(r'\x1b\[[0-9;]*[a-zA-Z]', '', val)
+            val = "".join(filter(lambda x: x.isprintable(), val))
+            val = val.strip()
+            if val or allow_empty:
+                return val
+        except EOFError:
+            return ""
+        except KeyboardInterrupt:
+            sys.exit()
+        except Exception:
+            continue
+
+
 
 try:
     import termios
@@ -544,11 +557,11 @@ def main_panel():
     linex()
 
     choice = safe_input(G + " CHOICE : " + Y).strip().upper()
-    if choice in ('A', 'a', '1'):
+    if choice.startswith('A') or choice == '1':
         settings_menu()
-    elif choice in ('B', 'b', '2'):
+    elif choice.startswith('B') or choice == '2':
         BNG_71_()
-    elif choice in ('C', 'c', '3'):
+    elif choice.startswith('C') or choice == '3':
         clear_screen()
         print(G + """
  ╔═══════════════════════════════════════╗
@@ -562,6 +575,7 @@ def main_panel():
         print(G + "\n    [!] Please Choose a Valid Option... " + N)
         time.sleep(2)
         main_panel()
+
 
 
 # ============================================================
@@ -645,16 +659,17 @@ def BNG_71_():
     print(G + "       (0) BACK TO PANEL")
     linex()
     choice = safe_input(G + "       CHOICE  " + W + "(A/B/0): " + Y).strip().upper()
-    if choice in ('A', 'a', '1'):
+    if choice.startswith('A') or choice == '1':
         old_clone()
-    elif choice in ('B', 'b', '2'):
+    elif choice.startswith('B') or choice == '2':
         old_Five()
-    elif choice == '0':
+    elif choice.startswith('0'):
         main_panel()
     else:
         print(G + "\n    [!] Choose Valid Option..." + N)
         time.sleep(2)
         BNG_71_()
+
 
 
 def old_clone():
@@ -670,15 +685,16 @@ def old_clone():
     print(G + "       (0) BACK")
     linex()
     _input = safe_input(G + "       CHOICE  " + W + "(A/B/C/D/0): " + Y).strip().upper()
-    if _input in ('A', 'a'):     old_One()
-    elif _input in ('B', 'b'):   old_Tow()
-    elif _input in ('C', 'c'):   old_Tree()
-    elif _input in ('D', 'd'):   old_Four()
-    elif _input == '0':          BNG_71_()
+    if _input.startswith('A'):     old_One()
+    elif _input.startswith('B'):   old_Tow()
+    elif _input.startswith('C'):   old_Tree()
+    elif _input.startswith('D'):   old_Four()
+    elif _input.startswith('0'):   BNG_71_()
     else:
         print(G + "\n    [!] Choose Valid Option..." + N)
         time.sleep(2)
         old_clone()
+
 
 
 def old_One():
