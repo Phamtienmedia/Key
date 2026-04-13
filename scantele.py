@@ -137,42 +137,6 @@ def check_fb_live(uid, cookie):
 
 # WhatsApp Group Link
 channel_link = ""
-# Valid keys
-approved_keys = ["vcl"]
-
-def first_step():
-    clear_screen()
-    print("────────────────────────────────────")
-    print("     🔐 Đã Mở Khóa 🔐")
-    print("────────────────────────────────────\n")
-
-    print("\033[1;32m THEO DÕI FACEBOOK CỦA TÔI ✅\033[0m\n")
-
-    # 👉 WhatsApp Group Auto-Open
-    # open_url("https://www.facebook.com/profile.php?id=61580049020011&mibextid=wwXIfr&mibextid=wwXIfr")
-
-    # 👉 Youtube Channel Auto-Open
-    # open_url("https://www.facebook.com/profile.php?id=61580049020011&mibextid=wwXIfr&mibextid=wwXIfr")
-
-    print("\033[1;32m KEY ĐỂ MỞ KHÓA NHẮN TIN CHO FB TÔI ✅ \033[0m\n")
-    print("[!] THEO DÕI FACEBOOK TÔI.")
-
-    # Tran Dang Phu
-
-    input("\n[↩] ẤN ENTER KHI ĐÃ THEO DÕI...")
-def check_key():
-    user_key = input("\n[?] Enter your key: ")
-    if user_key in approved_keys:
-        print("\n[✓] Key approved! Script is running...\n")
-    else:
-        print("\n[×] Invalid key! Dobara Channel par jao.")
-        sys.exit()
-
-# Pehle channel open hoga
-first_step()
-
-# Phir key check hoga
-check_key()
 
 # Tool ka main code yahan likho
 print(">>> Tool Successfully Unlocked <<<")
@@ -405,9 +369,13 @@ def BNG_71_():
     ____banner____()
     print('       \x1b[38;5;196m(\x1b[1;37mA\x1b[38;5;196m)\x1b[1;37m\x1b[38;5;196m\x1b[1;37m\x1b[38;5;46mOLD ACCOUNT TOOL')
     linex()
+    print('       \x1b[38;5;196m(\x1b[1;37mB\x1b[38;5;196m)\x1b[1;37m\x1b[38;5;196m\x1b[1;37m\x1b[38;5;46mCRACK FROM FILE UID (FILE CLONE)')
+    linex()
     __Jihad__ = input(f"       \x1b[38;5;196m\x1b[1;37m\x1b[38;5;196m\x1b[1;37m\x1b[38;5;196m\x1b[1;37m\x1b[38;5;41mCHOICE  {W}: {Y}")
     if __Jihad__ in ('A', 'a', '01', '1'):
         old_clone()
+    elif __Jihad__ in ('B', 'b', '02', '2'):
+        old_Five()
     else:
         print(f"\n    {rad}Choose Valid Option... ")
         time.sleep(2)
@@ -427,8 +395,6 @@ def old_clone():
     linex()
     print('       \x1b[38;5;196m(\x1b[1;37mD\x1b[38;5;196m)\x1b[1;37m\x1b[38;5;196m\x1b[1;37m\x1b[38;5;49m2004-2007 series')
     linex()
-    print('       \x1b[38;5;196m(\x1b[1;37mE\x1b[38;5;196m)\x1b[1;37m\x1b[38;5;196m\x1b[1;37m\x1b[38;5;49mCRACK FROM FILE UID')
-    linex()
     _input = input(f"       \x1b[38;5;196m\x1b[1;37m\x1b[38;5;196m\x1b[1;37m\x1b[38;5;196m\x1b[1;37m\x1b[38;5;41mCHOICE  {W}: {Y}")
     if _input in ('A', 'a', '01', '1'):
         old_One()
@@ -438,8 +404,6 @@ def old_clone():
         old_Tree()
     elif _input in ('D', 'd', '04', '4'):
         old_Four()
-    elif _input in ('E', 'e', '05', '5'):
-        old_Five()
     else:
         print(f"\n[×]{rad} Choose Value Option... ")
         BNG_71_()
